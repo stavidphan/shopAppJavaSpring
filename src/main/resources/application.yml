@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: shopapp
+
+  datasource:
+    url: jdbc:mysql://localhost:3306/shopapp
+    username: root
+    password:
