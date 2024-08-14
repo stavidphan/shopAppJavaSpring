@@ -3,9 +3,19 @@ spring:
     name: shopapp
 
   datasource:
-    url: jdbc:mysql://localhost:3306/shopapp
+    url: jdbc:mysql://localhost:3306/shopapp?useSSL=false&serverTimezone=UTC
+    driver-class-name: com.mysql.cj.jdbc.Driver
     username: root
     password:
+
+    jpa:
+        hibernate:
+            ddl-auto: none   # ko tự động tạo/thay đổi bảng trong db
+        show-sql: true
+        properties:
+            hibernate:
+            dialect: org.hibernate.dialect.MySQL8Dialect
+            format_sql: true
 
   servlet:
     multipart:
