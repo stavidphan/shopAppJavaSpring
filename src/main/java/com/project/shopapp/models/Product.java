@@ -3,8 +3,6 @@ package com.project.shopapp.models;
 import jakarta.persistence.*;
 import lombok.*;
 
-import java.time.LocalDateTime;
-
 @Entity
 @Table(name = "products")
 @Getter
