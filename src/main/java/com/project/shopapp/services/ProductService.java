@@ -83,8 +83,8 @@ public class ProductService implements IProductService {
 
     @Override
     public ProductImage createProductImage(Long productId, ProductImageDTO productImageDTO) throws Exception {
-        Product existingProduct = productRepository.findById(productImageDTO.getProductId())
-                .orElseThrow(() -> new DataNotFoundException("Cannot find product with id: " + productImageDTO.getProductId()));
+        Product existingProduct = productRepository.findById(productId)
+                .orElseThrow(() -> new DataNotFoundException("Cannot find product with id: " + productId));
 
         ProductImage newProductImage = ProductImage.builder()
                 .product(existingProduct)
@@ -93,8 +93,9 @@ public class ProductService implements IProductService {
 
         // ko cho insert quá 5 ảnh cho 1 sản phẩm
         int size = productImageRepository.findByProductId(productId).size();
-        if (size >= 5) {
-            throw new InvalidParamException("Cannot insert more than 5 images for a product");
+        if (size >= ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
+            throw new InvalidParamException(
+                    "Cannot insert more than " + ProductImage.MAXIMUM_IMAGES_PER_PRODUCT + " images for a product");
         }
 
         return productImageRepository.save(newProductImage);

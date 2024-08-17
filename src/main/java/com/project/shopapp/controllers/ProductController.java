@@ -23,6 +23,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 @RestController
@@ -33,7 +34,9 @@ public class ProductController {
 
     // CREATE PRODUCT
     @PostMapping("")
-    public ResponseEntity<?> createProduct(@Valid @RequestBody ProductDTO productDTO, BindingResult result
+    public ResponseEntity<?> createProduct(
+            @Valid @RequestBody ProductDTO productDTO,
+            BindingResult result
     ) {
         try {
             if (result.hasErrors()) {
@@ -46,7 +49,7 @@ public class ProductController {
 
             Product newProduct = productService.createProduct(productDTO);
 
-            return ResponseEntity.ok("Product created successfully " + newProduct);
+            return ResponseEntity.ok(newProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -59,7 +62,16 @@ public class ProductController {
             @ModelAttribute("files") List<MultipartFile> files
     ) throws Exception {
         Product existingProduct = productService.getProductById(productId);
-        files = files == null ? new ArrayList<MultipartFile>() : files;
+        // Loại bỏ các file rỗng khỏi danh sách files
+        files.removeIf(MultipartFile::isEmpty);
+//        files = (files == null) ? new ArrayList<MultipartFile>() : files;
+        if (files.isEmpty()) {
+            return ResponseEntity.badRequest().body("No file uploaded");
+        } else if (files.size() > ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
+            return ResponseEntity.badRequest().body(
+                    "Maximum " + ProductImage.MAXIMUM_IMAGES_PER_PRODUCT + " files can be uploaded at a time");
+        }
+
         List<ProductImage> productImages = new ArrayList<>();
         for (MultipartFile file : files) {
             if (file.getSize() == 0) {
@@ -70,6 +82,7 @@ public class ProductController {
                 return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
                         .body("File size is too large! Maximum file size is 10MB");
             }
+
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
@@ -92,7 +105,7 @@ public class ProductController {
 
     // STORE FILE
     private String storeFile(MultipartFile file) throws IOException {
-        String filename = StringUtils.cleanPath(file.getOriginalFilename());
+        String filename = StringUtils.cleanPath(Objects.requireNonNull(file.getOriginalFilename()));
         // them UUID de dam bao ten file la duy nhat
         String uniqueFilename = UUID.randomUUID().toString() + "_" + filename;
         // duong dan luu file
