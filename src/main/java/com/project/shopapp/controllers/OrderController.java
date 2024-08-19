@@ -36,11 +36,23 @@ public class OrderController {
         }
     }
 
-    @GetMapping("/{user_id}")
+    // danh sách orders của user
+    @GetMapping("/user/{user_id}")
     public ResponseEntity<?> getOrders(@Valid @PathVariable("user_id") Long userId) {
         try {
-            // lay danh sach order cua user co id = user_id
-            return ResponseEntity.ok("get orders by user id: " + userId);
+            List<Order> orders = orderService.findByUserId(userId);
+            return ResponseEntity.ok(orders);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    // lấy ra thông tin của 1 order
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getOrder(@Valid @PathVariable("id") Long orderId) {
+        try {
+            Order existingOrder = orderService.getOrderById(orderId);
+            return ResponseEntity.ok(existingOrder);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -50,8 +62,8 @@ public class OrderController {
     // Công việc của admin
     public ResponseEntity<?> updateOrder(@Valid @PathVariable Long id, @Valid @RequestBody OrderDTO orderDTO) {
         try {
-            // update order co id = id
-            return ResponseEntity.ok("update order with id: " + id);
+            Order updatedOrder = orderService.updateOrder(id, orderDTO);
+            return ResponseEntity.ok(updatedOrder);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }
@@ -60,7 +72,8 @@ public class OrderController {
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteOrder(@Valid @PathVariable Long id) {
         try {
-            // xoá mềm => cập nhật  trường active
+            // xoá mềm : cập nhật trường active = false
+            orderService.deleteOrder(id);
             return ResponseEntity.ok("delete order with id: " + id);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
