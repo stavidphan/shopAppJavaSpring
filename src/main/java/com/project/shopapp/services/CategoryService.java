@@ -13,12 +13,12 @@ import java.util.List;
 public class CategoryService implements ICategoryService {
     private final CategoryRepository categoryRepository;
     @Override
-    public Category createCategory(CategoryDTO categoryDTO) {
+    public void createCategory(CategoryDTO categoryDTO) {
         Category newCategory = Category
                 .builder()
                 .name(categoryDTO.getName())
                 .build();
-        return categoryRepository.save(newCategory);
+        categoryRepository.save(newCategory);
     }
 
     @Override
@@ -33,11 +33,10 @@ public class CategoryService implements ICategoryService {
     }
 
     @Override
-    public Category updateCategory(long categoryId, CategoryDTO categoryDTO) {
+    public void updateCategory(long categoryId, CategoryDTO categoryDTO) {
         Category existingCategory = getCategoryById(categoryId);
         existingCategory.setName(categoryDTO.getName());
         categoryRepository.save(existingCategory);
-        return existingCategory;
     }
 
     @Override
