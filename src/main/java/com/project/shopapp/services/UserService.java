@@ -26,7 +26,7 @@ public class UserService implements IUserService {
 
     // REGISTER USER
     @Override
-    public void createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws DataNotFoundException {
         String phoneNumber = userDTO.getPhoneNumber();
         // check if user with phoneNumber already exists
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
@@ -53,7 +53,8 @@ public class UserService implements IUserService {
             String encodedPassword = passwordEncoder.encode(password);
             newUser.setPassword(encodedPassword);
         }
-        userRepository.save(newUser);
+
+        return userRepository.save(newUser);
     }
 
     @Override
@@ -67,7 +68,7 @@ public class UserService implements IUserService {
             }
         }
         // authenticate with Java Spring Security
-        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(phoneNumber, password));
+        authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(phoneNumber, password, user.getAuthorities()));
         return jwtTokenUtil.generateToken(user);
     }
 }

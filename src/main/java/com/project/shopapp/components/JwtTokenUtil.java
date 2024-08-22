@@ -1,16 +1,19 @@
 package com.project.shopapp.components;
 
+import com.project.shopapp.exceptions.InvalidParamException;
 import com.project.shopapp.models.User;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Decoders;
+import io.jsonwebtoken.io.Encoders;
 import io.jsonwebtoken.security.Keys;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
+import java.security.SecureRandom;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -24,9 +27,10 @@ public class JwtTokenUtil {
     @Value("${jwt.secret}")
     private String SECRET_KEY;  // save to an environment variable
 
-    public String generateToken(User user) {
+    public String generateToken(User user) throws Exception {
         // properties => claims
         Map<String, Object> claims = new HashMap<>();
+//        this.generateSecretKey();
         claims.put("phoneNumber", user.getPhoneNumber());
         try {
             String token = Jwts.builder()
@@ -37,16 +41,23 @@ public class JwtTokenUtil {
                     .compact();
             return token;
         } catch (Exception e) {
-            // you can use logger to log this exception
-            System.err.println("Cannot create jwt token, error: " + e.getMessage());
-            return null;
+             throw new InvalidParamException(STR."Cannot create jwt token, error: \{e.getMessage()}");
         }
     }
 
     // chuyển SECRET_KEY => Key object
     private Key getSignInKey() {
         byte[] bytes = Decoders.BASE64.decode(SECRET_KEY);
+//        Decoders.BASE64.decode("vWeVF/cjeaudctyzLhH4cZA8FE6UKytseda5QHoT5No=")
         return Keys.hmacShaKeyFor(bytes);
+    }
+
+    private String generateSecretKey() {
+        SecureRandom random = new SecureRandom();
+        byte[] bytes = new byte[32];  // 256-bit key
+        random.nextBytes(bytes);
+        String secretKey = Encoders.BASE64.encode(bytes);
+        return secretKey;
     }
 
     private Claims extractAllClaims(String token) {

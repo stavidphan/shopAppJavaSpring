@@ -27,4 +27,4 @@ api:
 
 jwt:
   expiration: 2592000 # 30 days
-  secret: shopapp
+  secret: vWeVF/cjeaudctyzLhH4cZA8FE6UKytseda5QHoT5No=
