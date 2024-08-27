@@ -1,8 +1,9 @@
 package com.project.shopapp.services;
 
-import com.project.shopapp.components.JwtTokenUtil;
+import com.project.shopapp.components.JwtTokenUtils;
 import com.project.shopapp.dtos.UserDTO;
 import com.project.shopapp.exceptions.DataNotFoundException;
+import com.project.shopapp.exceptions.PermissionDenyException;
 import com.project.shopapp.models.Role;
 import com.project.shopapp.models.User;
 import com.project.shopapp.repositories.RoleRepository;
@@ -21,17 +22,26 @@ public class UserService implements IUserService {
     private final UserRepository userRepository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtTokenUtil jwtTokenUtil;
+    private final JwtTokenUtils jwtTokenUtils;
     private final AuthenticationManager authenticationManager;
 
     // REGISTER USER
     @Override
-    public User createUser(UserDTO userDTO) throws DataNotFoundException {
+    public User createUser(UserDTO userDTO) throws Exception {
         String phoneNumber = userDTO.getPhoneNumber();
         // check if user with phoneNumber already exists
         if (userRepository.existsByPhoneNumber(phoneNumber)) {
             throw new DataIntegrityViolationException("Phone number already exists");
         }
+
+        Role role = roleRepository.findById(userDTO.getRoleId())
+                .orElseThrow(() -> new DataNotFoundException("Role not found"));
+
+        // check if role is ADMIN
+        if (role.getName().equalsIgnoreCase(Role.ADMIN)) {
+            throw new PermissionDenyException("Cannot create user with role ADMIN");
+        }
+
         // convert from userDTO => user
         User newUser = User.builder()
                 .fullName(userDTO.getFullName())
@@ -43,8 +53,7 @@ public class UserService implements IUserService {
                 .googleAccountId(userDTO.getGoogleAccountId())
                 .build();
 
-        Role role = roleRepository.findById(userDTO.getRoleId())
-                .orElseThrow(() -> new DataNotFoundException("Role not found"));
+
         newUser.setRole(role);
 
         // kiểm tra nếu có account facebook hoặc google thì không cần password
@@ -69,6 +78,6 @@ public class UserService implements IUserService {
         }
         // authenticate with Java Spring Security
         authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(phoneNumber, password, user.getAuthorities()));
-        return jwtTokenUtil.generateToken(user);
+        return jwtTokenUtils.generateToken(user);
     }
 }

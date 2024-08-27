@@ -28,7 +28,7 @@ public class ProductService implements IProductService {
     @Override
     public Product createProduct(ProductDTO productDTO) throws DataNotFoundException {
         Category existingCategory = categoryRepository.findById(productDTO.getCategoryId())
-                .orElseThrow(() -> new DataNotFoundException("Cannot find category with id: " + productDTO.getCategoryId()));
+                .orElseThrow(() -> new DataNotFoundException(STR."Cannot find category with id: \{productDTO.getCategoryId()}"));
 
         Product newProduct = Product.builder()
                 .name(productDTO.getName())

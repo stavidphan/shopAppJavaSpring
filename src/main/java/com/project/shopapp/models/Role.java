@@ -11,6 +11,9 @@ import lombok.*;
 @NoArgsConstructor
 @Builder
 public class Role {
+    public static String ADMIN = "ADMIN";
+    public static String USER = "USER";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
