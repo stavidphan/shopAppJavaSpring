@@ -1,6 +1,7 @@
 package com.project.shopapp.controllers;
 
 import com.github.javafaker.Faker;
+import com.project.shopapp.components.LocalizationUtils;
 import com.project.shopapp.dtos.ProductDTO;
 import com.project.shopapp.dtos.ProductImageDTO;
 import com.project.shopapp.models.Product;
@@ -8,8 +9,10 @@ import com.project.shopapp.models.ProductImage;
 import com.project.shopapp.responses.ProductListResponse;
 import com.project.shopapp.responses.ProductResponse;
 import com.project.shopapp.services.IProductService;
+import com.project.shopapp.utils.MessageKeys;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.core.io.UrlResource;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -37,9 +40,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ProductController {
     private final IProductService productService;
+    private final LocalizationUtils localizationUtils;
 
     // CREATE PRODUCT
     @PostMapping("")
+    //POST http://localhost:8088/v1/api/products
     public ResponseEntity<?> createProduct(
             @Valid @RequestBody ProductDTO productDTO,
             BindingResult result
@@ -54,7 +59,6 @@ public class ProductController {
             }
 
             Product newProduct = productService.createProduct(productDTO);
-
             return ResponseEntity.ok(newProduct);
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -74,8 +78,7 @@ public class ProductController {
         if (files.isEmpty()) {
             return ResponseEntity.badRequest().body("No file uploaded");
         } else if (files.size() > ProductImage.MAXIMUM_IMAGES_PER_PRODUCT) {
-            return ResponseEntity.badRequest().body(
-                    "Maximum " + ProductImage.MAXIMUM_IMAGES_PER_PRODUCT + " files can be uploaded at a time");
+            return ResponseEntity.badRequest().body(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_MAX_5));
         }
 
         List<ProductImage> productImages = new ArrayList<>();
@@ -86,13 +89,13 @@ public class ProductController {
             // kiểm tra kích thước file và định dạng
             if (file.getSize() > 10 * 1024 * 1024) {
                 return ResponseEntity.status(HttpStatus.PAYLOAD_TOO_LARGE)
-                        .body("File size is too large! Maximum file size is 10MB");
+                        .body(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_LARGE));
             }
 
             String contentType = file.getContentType();
             if (contentType == null || !contentType.startsWith("image/")) {
                 return ResponseEntity.status(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-                        .body("Unsupported file type! Only accept image file");
+                        .body(localizationUtils.getLocalizedMessage(MessageKeys.UPLOAD_IMAGES_FILE_MUST_BE_IMAGE));
             }
             // lưu file vào thư mục uploads va cap nhat ten file vao productDTO
             String filename = storeFile(file);
@@ -107,6 +110,24 @@ public class ProductController {
         }
 
         return ResponseEntity.ok().body(productImages);
+    }
+
+    @GetMapping("/images/{imageName}")
+    public ResponseEntity<?> viewImage(@PathVariable String imageName) {
+        try {
+            java.nio.file.Path imagePath = Paths.get("uploads/" + imageName);
+            UrlResource resource = new UrlResource(imagePath.toUri());
+
+            if (resource.exists()) {
+                return ResponseEntity.ok()
+                        .contentType(MediaType.IMAGE_JPEG)
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (Exception e) {
+            return ResponseEntity.notFound().build();
+        }
     }
 
     // STORE FILE
@@ -128,11 +149,17 @@ public class ProductController {
     }
 
     @GetMapping("")
-    public ResponseEntity<ProductListResponse> getProducts(@RequestParam("page") int page, @RequestParam("limit") int limit) {
+    public ResponseEntity<ProductListResponse> getProducts(
+            @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "0", name = "category_id") Long categoryId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int limit
+    ) {
         PageRequest pageRequest = PageRequest.of(
                 page, limit,
-                Sort.by("createdAt").descending());
-        Page<ProductResponse> productPage = productService.getAllProducts(pageRequest);
+//                Sort.by("createdAt").descending());
+                Sort .by("id").ascending());
+        Page<ProductResponse> productPage = productService.getAllProducts(keyword, categoryId, pageRequest);
         int totalPages = productPage.getTotalPages();
         List<ProductResponse> products = productPage.getContent();
 
@@ -156,7 +183,7 @@ public class ProductController {
     public ResponseEntity<String> deleteProduct(@PathVariable("id") Long id) {
         try {
             productService.deleteProduct(id);
-            return ResponseEntity.ok("Product with id = " + id + " has been deleted");
+            return ResponseEntity.ok(localizationUtils.getLocalizedMessage(MessageKeys.DELETE_PRODUCT_SUCCESSFULLY));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

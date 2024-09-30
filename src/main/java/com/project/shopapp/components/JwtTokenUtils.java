@@ -32,6 +32,7 @@ public class JwtTokenUtils {
         Map<String, Object> claims = new HashMap<>();
         //this.generateSecretKey();
         claims.put("phoneNumber", user.getPhoneNumber());
+        claims.put("userId", user.getId());
         try {
             String token = Jwts.builder()
                     .setClaims(claims)
@@ -41,7 +42,7 @@ public class JwtTokenUtils {
                     .compact();
             return token;
         } catch (Exception e) {
-            throw new InvalidParamException("Cannot create jwt token, error: "+e.getMessage());
+            throw new InvalidParamException(STR."Cannot create jwt token, error: \{e.getMessage()}");
         }
     }
 

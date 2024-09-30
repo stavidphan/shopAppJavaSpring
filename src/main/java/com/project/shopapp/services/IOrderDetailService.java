@@ -9,6 +9,6 @@ public interface IOrderDetailService {
     OrderDetail createOrderDetail(OrderDetailDTO orderDetailDTO) throws Exception;
     OrderDetail getOrderDetailById(Long id) throws Exception;
     OrderDetail updateOrderDetail(Long id, OrderDetailDTO orderDetailDTO) throws Exception;
-    void deleteOrderDetail(Long id);
+    void deleteById(Long id);
     List<OrderDetail> findByOrderId(Long orderId) throws Exception;
 }
